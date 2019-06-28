@@ -27,8 +27,8 @@ function ThemeHeaderTemplate() {
 	<link rel="stylesheet" href="//play.pokemonshowdown.com/style/font-awesome.css" />
 	<link rel="stylesheet" href="//pokemonshowdown.com/forum/theme/panels.css" />
 	<link rel="stylesheet" href="//pokemonshowdown.com/theme/main.css" />
-	<link rel="stylesheet" href="//play.pokemonshowdown.com/style/battle.css?24e88eca" />
-	<link rel="stylesheet" href="//play.pokemonshowdown.com/style/replay.css?cfa51183" />
+	<link rel="stylesheet" href="//play.pokemonshowdown.com/style/battle.css?684f0841" />
+	<link rel="stylesheet" href="//play.pokemonshowdown.com/style/replay.css?84c2a3d4" />
 
 	<!-- Workarounds for IE bugs to display trees correctly. -->
 	<!--[if lte IE 6]><style> li.tree { height: 1px; } </style><![endif]-->
@@ -87,23 +87,23 @@ function ThemeFooterTemplate() {
 
 	<script src="//play.pokemonshowdown.com/js/lib/jquery-cookie.js"></script>
 	<script src="//play.pokemonshowdown.com/js/lib/html-sanitizer-minified.js"></script>
-	<script src="//play.pokemonshowdown.com/js/lib/soundmanager2-nodebug-jsmin.js?2de76b4b"></script>
+	<script src="//play.pokemonshowdown.com/js/lib/soundmanager2-nodebug-jsmin.js?8fc3a295"></script>
 	<script>
 		soundManager.setup({url: '//play.pokemonshowdown.com/swf/'});
 	</script>
-	<script src="//play.pokemonshowdown.com/config/config.js?2eb1b9d3"></script>
-	<script src="//play.pokemonshowdown.com/js/battledata.js?590e5ef9"></script>
-	<script src="//play.pokemonshowdown.com/data/pokedex-mini.js?d43512b9"></script>
-	<script src="//play.pokemonshowdown.com/data/pokedex-mini-bw.js?616fd068"></script>
-	<script src="//play.pokemonshowdown.com/data/graphics.js?df20bee4"></script>
-	<script src="//play.pokemonshowdown.com/data/pokedex.js?7f2bd4f0"></script>
+	<script src="//play.pokemonshowdown.com/config/config.js?7b5c377a"></script>
+	<script src="//play.pokemonshowdown.com/js/battledata.js?6dcccc40"></script>
+	<script src="//play.pokemonshowdown.com/data/pokedex-mini.js?0.8481983755162601"></script>
+	<script src="//play.pokemonshowdown.com/data/pokedex-mini-bw.js?0.2209118713936764"></script>
+	<script src="//play.pokemonshowdown.com/data/graphics.js?0.3744101533088535"></script>
+	<script src="//play.pokemonshowdown.com/data/pokedex.js?6640a073"></script>
 	<script src="//play.pokemonshowdown.com/data/items.js?bbd626f5"></script>
-	<script src="//play.pokemonshowdown.com/data/moves.js?5c0fdec9"></script>
-	<script src="//play.pokemonshowdown.com/data/abilities.js?ab314611"></script>
-	<script src="//play.pokemonshowdown.com/data/teambuilder-tables.js?88ee7998"></script>
-	<script src="//play.pokemonshowdown.com/js/battle-tooltips.js?0f1f5fa6"></script>
-	<script src="//play.pokemonshowdown.com/js/battle.js?f2797548"></script>
-	<script src="/js/replay.js?f7d435c0"></script>
+	<script src="//play.pokemonshowdown.com/data/moves.js?111016ce"></script>
+	<script src="//play.pokemonshowdown.com/data/abilities.js?5e9293db"></script>
+	<script src="//play.pokemonshowdown.com/data/teambuilder-tables.js?a4464f47"></script>
+	<script src="//play.pokemonshowdown.com/js/battle-tooltips.js?39705c5a"></script>
+	<script src="//play.pokemonshowdown.com/js/battle.js?37c2538d"></script>
+	<script src="/js/replay.js?e8429ef8"></script>
 
 </body></html>
 <?php

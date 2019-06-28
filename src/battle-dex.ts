@@ -79,31 +79,13 @@ if (!Object.values) {
 		return out;
 	};
 }
-if (!Object.keys) {
-	Object.keys = function keys(thing: any) {
-		let out: any[] = [];
-		for (let k in thing) {
-			out.push(k);
-		}
-		return out;
-	};
-}
-if (!Object.entries) {
-	Object.entries = function entries(thing: any) {
-		let out: any[] = [];
-		for (let k in thing) {
-			out.push([k, thing[k]]);
-		}
-		return out;
-	};
-}
-if (!Object.create) {
-	Object.create = function (proto: any) {
-		function F() {}
-		F.prototype = proto;
-		return new (F as any)();
-	};
-}
+// if (!Object.create) {
+// 	Object.create = function (proto) {
+// 		function F() {}
+// 		F.prototype = proto;
+// 		return new F();
+// 	};
+// }
 
 if (typeof window === 'undefined') {
 	// Node
@@ -192,15 +174,15 @@ const Dex = new class implements ModdedDex {
 	resourcePrefix = (() => {
 		let prefix = '';
 		if (!window.document || !document.location || document.location.protocol !== 'http:') prefix = 'https:';
-		return prefix + '//play.pokemonshowdown.com/';
+		return prefix + '//megaoptimum.herokuapp.com/'; 	//*// '//play.pokemonshowdown.com/';
 	})();
 
 	fxPrefix = (() => {
 		if (window.document && document.location && document.location.protocol === 'file:') {
-			if (window.Replays) return 'https://play.pokemonshowdown.com/fx/';
+			if (window.Replays) return 'https://megaoptimum.herokuapp.com/fx' //*// 'https://play.pokemonshowdown.com/fx/';
 			return 'fx/';
 		}
-		return '//play.pokemonshowdown.com/fx/';
+		return '//megaoptimum.herokuapp.com/fx'; //*// '//play.pokemonshowdown.com/fx/';
 	})();
 
 	loadedSpriteData = {xy: 1, bw: 0};
@@ -214,9 +196,6 @@ const Dex = new class implements ModdedDex {
 		}
 		this.moddedDexes[modid] = new ModdedDex(modid);
 		return this.moddedDexes[modid];
-	}
-	forGen(gen: number) {
-		return this.mod(`gen${gen}` as ID);
 	}
 
 	resolveAvatar(avatar: string): string {
@@ -323,7 +302,7 @@ const Dex = new class implements ModdedDex {
 
 	getGen3Category(type: string) {
 		return [
-			'Fire', 'Water', 'Grass', 'Electric', 'Ice', 'Psychic', 'Dark', 'Dragon',
+			'Fire', 'Water', 'Grass', 'Electric', 'Ice', 'Psychic', 'Ghost', 'Dragon',
 		].includes(type) ? 'Special' : 'Physical';
 	}
 
@@ -367,6 +346,10 @@ const Dex = new class implements ModdedDex {
 		return ability;
 	}
 
+	getAbilitiesFor(id: ID, gen: number) {
+		return this.mod(`gen${gen}` as ID).getTemplate(id).abilities;
+	}
+
 	getTemplate(nameOrTemplate: string | Template | null | undefined): Template {
 		if (nameOrTemplate && typeof nameOrTemplate !== 'string') {
 			// TODO: don't accept Templates here
@@ -389,12 +372,6 @@ const Dex = new class implements ModdedDex {
 			template = data;
 		} else {
 			if (!data) data = {exists: false};
-			if (!data.tier && id.slice(-5) === 'totem') {
-				data.tier = this.getTemplate(id.slice(0, -5)).tier;
-			}
-			if (!data.tier && data.baseSpecies && toID(data.baseSpecies) !== id) {
-				data.tier = this.getTemplate(data.baseSpecies).tier;
-			}
 			template = new Template(id, name, data);
 			window.BattlePokedex[id] = template;
 		}
@@ -414,29 +391,15 @@ const Dex = new class implements ModdedDex {
 		return template;
 	}
 
-	/** @deprecated */
-	getTier(pokemon: Template, gen = 7, isDoubles = false): string {
-		if (gen < 7) pokemon = this.forGen(gen).getTemplate(pokemon.id);
-		if (!isDoubles) return pokemon.tier;
+	getTier(pokemon: Pokemon, gen = 7, isDoubles = false): string {
 		let table = window.BattleTeambuilderTable;
-		if (table && table[`gen${this.gen}doubles`]) {
-			table = table[`gen${this.gen}doubles`];
-		}
-		if (!table) return pokemon.tier;
-
-		let id = pokemon.id;
-		if (id in table.overrideTier) {
-			return table.overrideTier[id];
-		}
-		if (id.slice(-5) === 'totem' && id.slice(0, -5) in table.overrideTier) {
-			return table.overrideTier[id.slice(0, -5)];
-		}
-		id = toID(pokemon.baseSpecies);
-		if (id in table.overrideTier) {
-			return table.overrideTier[id];
-		}
-
-		return pokemon.tier;
+		gen = Math.floor(gen);
+		if (gen < 0 || gen > 7) gen = 7;
+		if (gen < 7 && !isDoubles) table = table['gen' + gen];
+		if (isDoubles) table = table['gen' + gen + 'doubles'];
+		// Prevents Pokemon from having their tier displayed as 'undefined' when they're in a previous generation teambuilder
+		if (this.getTemplate(pokemon.species).gen > gen) return 'Illegal';
+		return table.overrideTier[toID(pokemon.species)];
 	}
 
 	getType(type: any): Effect {
@@ -475,7 +438,7 @@ const Dex = new class implements ModdedDex {
 		document.getElementsByTagName('body')[0].appendChild(el);
 	}
 	getSpriteData(pokemon: Pokemon | Template | string, siden: number, options: {
-		gen?: number, shiny?: boolean, gender?: GenderName, afd?: boolean, noScale?: boolean, mod?: string,
+		gen?: number, shiny?: boolean, gender?: GenderName, afd?: boolean, noScale?: boolean,
 	} = {gen: 6}) {
 		if (!options.gen) options.gen = 6;
 		if (pokemon instanceof Pokemon) {
@@ -565,12 +528,6 @@ const Dex = new class implements ModdedDex {
 			return spriteData;
 		}
 
-		// Mod Cries
-		if (options.mod) {
-			spriteData.cryurl = `sprites/${options.mod}/audio/${toID(template.baseSpecies)}`;
-			spriteData.cryurl += (window.nodewebkit ? '.ogg' : '.mp3');
-		}
-
 		if (animationData[facing + 'f'] && options.gender === 'F') facing += 'f';
 		let allowAnim = !Dex.prefs('noanim') && !Dex.prefs('nogif');
 		if (allowAnim && genNum >= 6) spriteData.pixelated = false;
@@ -622,9 +579,25 @@ const Dex = new class implements ModdedDex {
 		return spriteData;
 	}
 
-	getPokemonIconNum(id: ID, isFemale?: boolean, facingLeft?: boolean) {
+	getPokemonIcon(pokemon: any, facingLeft?: boolean) {
 		let num = 0;
-		if (window.BattlePokemonSprites && BattlePokemonSprites[id] && BattlePokemonSprites[id].num) {
+		if (pokemon === 'pokeball') {
+			return 'background:transparent url(' + Dex.resourcePrefix + 'sprites/smicons-pokeball-sheet.png) no-repeat scroll -0px 4px';
+		} else if (pokemon === 'pokeball-statused') {
+			return 'background:transparent url(' + Dex.resourcePrefix + 'sprites/smicons-pokeball-sheet.png) no-repeat scroll -40px 4px';
+		} else if (pokemon === 'pokeball-fainted') {
+			return 'background:transparent url(' + Dex.resourcePrefix + 'sprites/smicons-pokeball-sheet.png) no-repeat scroll -80px 4px;opacity:.4;filter:contrast(0)';
+		} else if (pokemon === 'pokeball-none') {
+			return 'background:transparent url(' + Dex.resourcePrefix + 'sprites/smicons-pokeball-sheet.png) no-repeat scroll -80px 4px';
+		}
+		let id = toID(pokemon);
+		if (pokemon && pokemon.species) id = toID(pokemon.species);
+		if (pokemon && pokemon.volatiles && pokemon.volatiles.formechange && !pokemon.volatiles.transform) {
+			id = toID(pokemon.volatiles.formechange[1]);
+		}
+		if (pokemon && pokemon.num) {
+			num = pokemon.num;
+		} else if (window.BattlePokemonSprites && BattlePokemonSprites[id] && BattlePokemonSprites[id].num) {
 			num = BattlePokemonSprites[id].num;
 		} else if (window.BattlePokedex && window.BattlePokedex[id] && BattlePokedex[id].num) {
 			num = BattlePokedex[id].num;
@@ -636,41 +609,22 @@ const Dex = new class implements ModdedDex {
 			num = BattlePokemonIconIndexes[id];
 		}
 
-		if (isFemale) {
-			if (['unfezant', 'frillish', 'jellicent', 'meowstic', 'pyroar'].includes(id)) {
+		if (pokemon && pokemon.gender === 'F') {
+			if (id === 'unfezant' || id === 'frillish' || id === 'jellicent' || id === 'meowstic' || id === 'pyroar') {
 				num = BattlePokemonIconIndexes[id + 'f'];
 			}
 		}
+
 		if (facingLeft) {
 			if (BattlePokemonIconIndexesLeft[id]) {
 				num = BattlePokemonIconIndexesLeft[id];
 			}
 		}
-		return num;
-	}
-
-	getPokemonIcon(pokemon: any, facingLeft?: boolean) {
-		if (pokemon === 'pokeball') {
-			return 'background:transparent url(' + Dex.resourcePrefix + 'sprites/smicons-pokeball-sheet.png) no-repeat scroll -0px 4px';
-		} else if (pokemon === 'pokeball-statused') {
-			return 'background:transparent url(' + Dex.resourcePrefix + 'sprites/smicons-pokeball-sheet.png) no-repeat scroll -40px 4px';
-		} else if (pokemon === 'pokeball-fainted') {
-			return 'background:transparent url(' + Dex.resourcePrefix + 'sprites/smicons-pokeball-sheet.png) no-repeat scroll -80px 4px;opacity:.4;filter:contrast(0)';
-		} else if (pokemon === 'pokeball-none') {
-			return 'background:transparent url(' + Dex.resourcePrefix + 'sprites/smicons-pokeball-sheet.png) no-repeat scroll -80px 4px';
-		}
-
-		let id = toID(pokemon);
-		if (pokemon && pokemon.species) id = toID(pokemon.species);
-		if (pokemon && pokemon.volatiles && pokemon.volatiles.formechange && !pokemon.volatiles.transform) {
-			id = toID(pokemon.volatiles.formechange[1]);
-		}
-		let num = this.getPokemonIconNum(id, pokemon && pokemon.gender === 'F', facingLeft);
 
 		let top = Math.floor(num / 12) * 30;
 		let left = (num % 12) * 40;
 		let fainted = (pokemon && pokemon.fainted ? ';opacity:.3;filter:grayscale(100%) brightness(.5)' : '');
-		return 'background:transparent url(' + Dex.resourcePrefix + 'sprites/smicons-sheet.png?a6) no-repeat scroll -' + left + 'px -' + top + 'px' + fainted;
+		return 'background:transparent url(' + Dex.resourcePrefix + 'sprites/smicons-sheet.png?a5) no-repeat scroll -' + left + 'px -' + top + 'px' + fainted;
 	}
 
 	getTeambuilderSprite(pokemon: any, gen: number = 0) {
@@ -817,9 +771,6 @@ class ModdedDex {
 			if (id in table.removeSecondAbility) {
 				delete abilities['1'];
 			}
-			if (id in table.overrideHiddenAbility) {
-				abilities['H'] = table.overrideHiddenAbility[id];
-			}
 			if (this.gen < 5) delete abilities['H'];
 			if (this.gen < 7) delete abilities['S'];
 
@@ -831,13 +782,6 @@ class ModdedDex {
 		if (id in table.overrideType) data.types = table.overrideType[id].split('/');
 
 		if (id in table.overrideTier) data.tier = table.overrideTier[id];
-		if (!data.tier && id.slice(-5) === 'totem') {
-			data.tier = this.getTemplate(id.slice(0, -5)).tier;
-		}
-		if (!data.tier && data.baseSpecies && toID(data.baseSpecies) !== id) {
-			data.tier = this.getTemplate(data.baseSpecies).tier;
-		}
-		if (data.gen > this.gen) data.tier = 'Illegal';
 
 		const template = new Template(id, name, data);
 		this.cache.Templates[id] = template;

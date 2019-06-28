@@ -338,7 +338,7 @@ class BattleTooltips {
 			$(document.body).append($wrapper);
 			$wrapper.on('click', e => {
 				try {
-					const selection = window.getSelection()!;
+					const selection = window.getSelection();
 					if (selection.type === 'Range') return;
 				} catch (err) {}
 				BattleTooltips.hideTooltip();
@@ -617,6 +617,7 @@ class BattleTooltips {
 
 		text += '<h2>' + name + genderBuf + (pokemon.level !== 100 ? ' <small>L' + pokemon.level + '</small>' : '') + '<br />';
 
+		let template = this.battle.dex.getTemplate(clientPokemon ? clientPokemon.getSpecies() : pokemon.species);
 		if (clientPokemon && clientPokemon.volatiles.formechange) {
 			if (clientPokemon.volatiles.transform) {
 				text += '<small>(Transformed into ' + clientPokemon.volatiles.formechange[1] + ')</small><br />';
@@ -662,16 +663,41 @@ class BattleTooltips {
 		}
 
 		const supportsAbilities = this.battle.gen > 2 && !this.battle.tier.includes("Let's Go");
-
-		let abilityText = '';
-		if (supportsAbilities) {
-			abilityText = this.getPokemonAbilityText(clientPokemon, serverPokemon, isActive);
-		}
-
-		let itemText = '';
-		if (serverPokemon && serverPokemon.item) {
-			itemText = '<small>Item:</small> ' + Dex.getItem(serverPokemon.item).name;
+		if (serverPokemon) {
+			if (supportsAbilities) {
+				let abilityText = Dex.getAbility(serverPokemon.baseAbility).name;
+				let ability = Dex.getAbility(serverPokemon.ability || pokemon.ability).name;
+				if (ability && (ability !== abilityText)) {
+					abilityText = ability + ' (base: ' + abilityText + ')';
+				}
+				text += '<p><small>Ability:</small> ' + abilityText;
+				if (serverPokemon.item) {
+					text += ' / <small>Item:</small> ' + Dex.getItem(serverPokemon.item).name;
+				}
+				text += '</p>';
+			} else if (serverPokemon.item) {
+				let itemName = Dex.getItem(serverPokemon.item).name;
+				text += '<p><small>Item:</small> ' + itemName + '</p>';
+			}
 		} else if (clientPokemon) {
+			if (supportsAbilities) {
+				if (!pokemon.baseAbility && !pokemon.ability) {
+					let abilities = template.abilities;
+					text += '<p><small>Possible abilities:</small> ' + abilities['0'];
+					if (abilities['1']) text += ', ' + abilities['1'];
+					if (abilities['H']) text += ', ' + abilities['H'];
+					if (abilities['S']) text += ', ' + abilities['S'];
+					text += '</p>';
+				} else if (pokemon.ability) {
+					if (pokemon.ability === pokemon.baseAbility) {
+						text += '<p><small>Ability:</small> ' + Dex.getAbility(pokemon.ability).name + '</p>';
+					} else {
+						text += '<p><small>Ability:</small> ' + Dex.getAbility(pokemon.ability).name + ' (base: ' + Dex.getAbility(pokemon.baseAbility).name + ')' + '</p>';
+					}
+				} else if (pokemon.baseAbility) {
+					text += '<p><small>Ability:</small> ' + Dex.getAbility(pokemon.baseAbility).name + '</p>';
+				}
+			}
 			let item = '';
 			let itemEffect = clientPokemon.itemEffect || '';
 			if (clientPokemon.prevItem) {
@@ -682,17 +708,8 @@ class BattleTooltips {
 			}
 			if (pokemon.item) item = Dex.getItem(pokemon.item).name;
 			if (itemEffect) itemEffect = ' (' + itemEffect + ')';
-			if (item) itemText = '<small>Item:</small> ' + item + itemEffect;
+			if (item) text += '<p><small>Item:</small> ' + item + itemEffect + '</p>';
 		}
-
-		text += '<p>';
-		text += abilityText;
-		if (itemText) {
-			// ability/item on one line for your own switch tooltips, two lines everywhere else
-			text += (!isActive && serverPokemon ? ' / ' : '</p><p>');
-			text += itemText;
-		}
-		text += '</p>';
 
 		text += this.renderStats(clientPokemon, serverPokemon, !isActive);
 
@@ -736,25 +753,16 @@ class BattleTooltips {
 	calculateModifiedStats(clientPokemon: Pokemon | null, serverPokemon: ServerPokemon) {
 		let stats = {...serverPokemon.stats};
 		let pokemon = clientPokemon || serverPokemon;
-		const isPowerTrick = clientPokemon && clientPokemon.volatiles['powertrick'];
 		for (const statName of Dex.statNamesExceptHP) {
-			let sourceStatName = statName;
-			if (isPowerTrick) {
-				if (statName === 'atk') sourceStatName = 'def';
-				if (statName === 'def') sourceStatName = 'atk';
-			}
-			stats[statName] = serverPokemon.stats[sourceStatName];
-			if (!clientPokemon) continue;
+			stats[statName] = serverPokemon.stats[statName];
 
-			const clientStatName = clientPokemon.boosts.spc && (statName === 'spa' || statName === 'spd') ? 'spc' : statName;
-			const boostLevel = clientPokemon.boosts[clientStatName];
-			if (boostLevel) {
-				let boostTable = [1, 1.5, 2, 2.5, 3, 3.5, 4];
-				if (boostLevel > 0) {
-					stats[statName] *= boostTable[boostLevel];
+			if (clientPokemon && clientPokemon.boosts[statName]) {
+				let boostTable = [1, 5 / 4, 4 / 3, 64 / 45, 14 / 9, 5 / 3, 16 / 9];
+				if (clientPokemon.boosts[statName] > 0) {
+					stats[statName] *= boostTable[clientPokemon.boosts[statName]];
 				} else {
-					if (this.battle.gen <= 2) boostTable = [1, 100 / 66, 2, 2.5, 100 / 33, 100 / 28, 4];
-					stats[statName] /= boostTable[-boostLevel];
+					if (this.battle.gen <= 2) boostTable = [1, 100 / 80, 100 / 75, 100 / 70, 100 / 64, 100 / 60, 100 / 55];
+					stats[statName] /= boostTable[-clientPokemon.boosts[statName]];
 				}
 				stats[statName] = Math.floor(stats[statName]);
 			}
@@ -1524,7 +1532,7 @@ class BattleTooltips {
 
 		// Type-enhancing items
 		if (BattleTooltips.itemTypes[item.name] === moveType) {
-			value.itemModify(this.battle.gen < 4 ? 1.1 : 1.2);
+			value.itemModify(this.battle.gen < 3 ? 1.1 : 1.2); //*// < 4 ?
 			return value;
 		}
 
@@ -1567,56 +1575,6 @@ class BattleTooltips {
 			allyAbility = Dex.getAbility(this.battle.myPokemon[ally.slot].ability).name;
 		}
 		return allyAbility;
-	}
-	getPokemonAbilityData(clientPokemon: Pokemon | null, serverPokemon: ServerPokemon | null | undefined) {
-		const abilityData: {ability: string, baseAbility: string, possibilities: string[]} = {
-			ability: '', baseAbility: '', possibilities: [],
-		};
-		if (clientPokemon) {
-			if (clientPokemon.ability) {
-				abilityData.ability = clientPokemon.ability || clientPokemon.baseAbility;
-				if (clientPokemon.baseAbility && clientPokemon.baseAbility !== abilityData.ability) {
-					abilityData.baseAbility = clientPokemon.baseAbility;
-				}
-			} else {
-				const template = this.battle.dex.getTemplate(clientPokemon.getSpecies() || (serverPokemon && serverPokemon.species) || '');
-				if (template.exists && template.abilities) {
-					abilityData.possibilities = [template.abilities['0']];
-					if (template.abilities['1']) abilityData.possibilities.push(template.abilities['1']);
-					if (template.abilities['H']) abilityData.possibilities.push(template.abilities['H']);
-					if (template.abilities['S']) abilityData.possibilities.push(template.abilities['S']);
-				}
-			}
-		}
-		if (serverPokemon) {
-			if (!abilityData.ability) abilityData.ability = serverPokemon.ability || serverPokemon.baseAbility;
-			if (!abilityData.baseAbility && serverPokemon.baseAbility && serverPokemon.baseAbility !== abilityData.ability) {
-				abilityData.baseAbility = serverPokemon.baseAbility;
-			}
-		}
-		return abilityData;
-	}
-	getPokemonAbilityText(
-		clientPokemon: Pokemon | null,
-		serverPokemon: ServerPokemon | null | undefined,
-		isActive: boolean | undefined
-	) {
-		let text = '';
-		const abilityData = this.getPokemonAbilityData(clientPokemon, serverPokemon);
-		if (!isActive) {
-			// for switch tooltips, only show the original ability
-			const ability = abilityData.baseAbility || abilityData.ability;
-			if (ability) text = '<small>Ability:</small> ' + Dex.getAbility(ability).name;
-		} else {
-			if (abilityData.ability) {
-				text = '<small>Ability:</small> ' + Dex.getAbility(abilityData.ability).name;
-				if (abilityData.baseAbility) text += ' (base: ' + Dex.getAbility(abilityData.baseAbility).name + ')';
-			}
-		}
-		if (!text && abilityData.possibilities.length) {
-			text = '<small>Possible abilities:</small> ' + abilityData.possibilities.join(', ');
-		}
-		return text;
 	}
 }
 

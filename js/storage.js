@@ -1,4 +1,4 @@
-Config.origindomain = 'play.pokemonshowdown.com';
+Config.origindomain = 'gigamaximum.herokuapp.com/' //*//'play.pokemonshowdown.com';
 // `defaultserver` specifies the server to use when the domain name in the
 // address bar is `Config.origindomain`.
 Config.defaultserver = {
@@ -1201,7 +1201,7 @@ Storage.importTeam = function (buffer, teams) {
 					}
 				}
 			}
-			if (line === 'Frustration' && curSet.happiness === undefined) {
+			if (line === 'Frustration') {
 				curSet.happiness = 0;
 			}
 			curSet.moves.push(line);

@@ -380,13 +380,13 @@ class Pokemon implements PokemonDetails, PokemonHealth {
 		}
 		if (this.boosts[boostStat] > 0) {
 			let goodBoostTable = [
-				'1&times;', '1.5&times;', '2&times;', '2.5&times;', '3&times;', '3.5&times;', '4&times;',
+				'1&times;', '1.25&times;', '1.33&times;', '1.42&times;', '1.55&times;', '1.67&times;', '1.77&times;',
 			];
 			// let goodBoostTable = ['Normal', '+1', '+2', '+3', '+4', '+5', '+6'];
 			return '' + goodBoostTable[this.boosts[boostStat]] + '&nbsp;' + boostStatTable[boostStat];
 		}
 		let badBoostTable = [
-			'1&times;', '0.67&times;', '0.5&times;', '0.4&times;', '0.33&times;', '0.29&times;', '0.25&times;',
+			'1&times;', '0.8&times;', '0.75&times;', '0.7&times;', '0.64&times;', '0.6&times;', '0.55&times;',
 		];
 		// let badBoostTable = ['Normal', '&minus;1', '&minus;2', '&minus;3', '&minus;4', '&minus;5', '&minus;6'];
 		return '' + badBoostTable[-this.boosts[boostStat]] + '&nbsp;' + boostStatTable[boostStat];
@@ -498,8 +498,7 @@ class Pokemon implements PokemonDetails, PokemonHealth {
 		}
 		if (this.volatiles['magnetrise'] || this.volatiles['telekinesis']) {
 			return false;
-		}
-		if (item === 'airballoon') {
+		} else if (item !== 'airballoon') {
 			return false;
 		}
 		return !this.getTypeList(serverPokemon).includes('Flying');
@@ -2010,7 +2009,6 @@ class Battle {
 					poke.itemEffect = 'bestowed';
 					this.scene.resultAnim(poke, item.name, 'neutral');
 					break;
-				case 'switcheroo':
 				case 'trick':
 					poke.itemEffect = 'tricked';
 					// falls through
@@ -3141,9 +3139,9 @@ class Battle {
 		case 'join': case 'j': {
 			if (this.roomid) {
 				let room = app!.rooms[this.roomid];
-				let user = BattleTextParser.parseNameParts(args[1]);
-				let userid = toUserid(user.name);
-				if (/^[a-z0-9]/i.test(user.name)) user.name = ' ' + user.name;
+				let user = args[1];
+				let userid = toUserid(user);
+				if (/^[a-z0-9]/i.test(user)) user = ' ' + user;
 				if (!room.users[userid]) room.userCount.users++;
 				room.users[userid] = user;
 				room.userList.add(userid);
@@ -3174,17 +3172,11 @@ class Battle {
 		case 'name': case 'n': {
 			if (this.roomid) {
 				let room = app!.rooms[this.roomid];
-				let user = BattleTextParser.parseNameParts(args[1]);
-				let oldid = args[2];
-				if (toUserid(oldid) === app!.user.get('userid')) {
-					app!.user.set({
-						away: user.away,
-						status: user.status,
-					});
-				}
-				let userid = toUserid(user.name);
-				room.users[userid] = user;
-				room.userList.remove(oldid);
+				let newuser = args[1];
+				let olduser = args[2];
+				let userid = toUserid(newuser);
+				room.users[userid] = newuser;
+				room.userList.remove(olduser);
 				room.userList.add(userid);
 			}
 			if (!this.ignoreSpects) {
@@ -3299,7 +3291,7 @@ class Battle {
 		}
 		case 'gen': {
 			this.gen = parseInt(args[1], 10);
-			this.dex = Dex.forGen(this.gen);
+			this.dex = Dex.mod(`gen${this.gen}` as ID);
 			this.scene.updateGen();
 			this.log(args);
 			break;
