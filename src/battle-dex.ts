@@ -174,7 +174,7 @@ const Dex = new class implements ModdedDex {
 	resourcePrefix = (() => {
 		let prefix = '';
 		if (!window.document || !document.location || document.location.protocol !== 'http:') prefix = 'https:';
-		return prefix + '//megaoptimum.herokuapp.com/'; 	//*// '//play.pokemonshowdown.com/';
+		return prefix + '//gigamaximum.herokuapp.com'; 	//*// '//play.pokemonshowdown.com/';
 	})();
 
 	fxPrefix = (() => {
