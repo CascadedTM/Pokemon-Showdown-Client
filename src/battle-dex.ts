@@ -179,10 +179,10 @@ const Dex = new class implements ModdedDex {
 
 	fxPrefix = (() => {
 		if (window.document && document.location && document.location.protocol === 'file:') {
-			if (window.Replays) return 'https://megaoptimum.herokuapp.com/fx' //*// 'https://play.pokemonshowdown.com/fx/';
+			if (window.Replays) 'https://play.pokemonshowdown.com/fx/'; //'https://megaoptimum.herokuapp.com/fx'
 			return 'fx/';
 		}
-		return '//megaoptimum.herokuapp.com/fx'; //*// '//play.pokemonshowdown.com/fx/';
+		return '//play.pokemonshowdown.com/fx/';
 	})();
 
 	loadedSpriteData = {xy: 1, bw: 0};
